@@ -12,13 +12,13 @@ private:
 	wxStaticText* linspaceLRText;
 	wxStaticText* linspaceURText;
 	wxStaticText* linspaceIText;
-	wxSpinCtrl* linspaceLRsp;
-	wxSpinCtrl* linspaceURsp;
-	wxSpinCtrl* linspaceIsp;
+	wxTextCtrl* linspaceLRtc;
+	wxTextCtrl* linspaceURtc;
+	wxTextCtrl* linspaceItc;
 	wxStaticText* aText;
 	wxStaticText* lambdaText;
-	wxSpinCtrl* Asp;
-	wxSpinCtrl* LAMBDAsp;
+	wxTextCtrl* Atc;
+	wxTextCtrl* LAMBDAtc;
 	wxStaticText* vibPerText;
 	wxTextCtrl* vibPerTC;
 	wxButton* submitButton;

@@ -5,15 +5,15 @@
 #include <wx/textentry.h>
 
 double y[100][100], x[100];
-int stringlen, h, a, k, tRange, lowRange, lambda, outputActivated = 0;
-double vibPeriod;
+int stringlen, lowRange, h;
+double a, k, tRange,lambda, outputActivated = 0, vibPeriod;
 
 enum IDs {
-	LRspinID = 2,
-	URspinID = 3,
-	IspinID = 4,
-	AspinID = 5,
-	LAMBDAspinID = 6,
+	LRtcID = 2,
+	URtcID = 3,
+	ItcID = 4,
+	AtcID = 5,
+	LAMBDAtcID = 6,
 	VIBPERtcID = 7
 };
 
@@ -25,39 +25,40 @@ MainFrame::MainFrame(const wxString& title) : wxFrame(nullptr, wxID_ANY, title) 
 void MainFrame::CreateControls() {
 	panel = new wxPanel(this);
 
+	wxTextValidator validator(wxFILTER_NUMERIC);
+
+	wxFont font(12, wxFONTFAMILY_DEFAULT, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL, false, "Arial Unicode MS");
+
 	wxStaticText* outputText = new wxStaticText(panel, wxID_ANY, "OUTPUT", wxPoint(15, 250), wxSize(765, -1), wxALIGN_CENTRE);
 	outputText->SetBackgroundColour(*wxRED);
 
 	linspaceText = new wxStaticText(panel, wxID_ANY, "Lower-range(LR), upper-range(UR), and increment(I) value for x:", wxPoint(15, 20), wxSize(400, 100));
 	linspaceText->SetBackgroundColour(*wxLIGHT_GREY);
 
-	linspaceLRText = new wxStaticText(panel, wxID_ANY, "LR", wxPoint(40, 70));
+	linspaceLRtc = new wxTextCtrl(panel, LRtcID, "LR", wxPoint(25, 70), wxSize(50, 40), 0L, validator);
+	linspaceLRtc->SetFont(font);
 
-	linspaceURText = new wxStaticText(panel, wxID_ANY, "UR", wxPoint(140, 70));
+	linspaceURtc = new wxTextCtrl(panel, URtcID, "UR", wxPoint(125, 70), wxSize(50, 40), 0L, validator);
+	linspaceURtc->SetFont(font);
 
-	linspaceIText = new wxStaticText(panel, wxID_ANY, "I", wxPoint(240, 70));
-
-	linspaceLRsp = new wxSpinCtrl(panel, LRspinID, "", wxPoint(25, 90), wxSize(50, 20), 16384L, 0, 999, 0);
-
-	linspaceURsp = new wxSpinCtrl(panel, URspinID, "", wxPoint(125, 90), wxSize(50, 20), 16384L, 0, 999, 0);
-
-	linspaceIsp = new wxSpinCtrl(panel, IspinID, "", wxPoint(225, 90), wxSize(50, 20), 16384L, 0, 999, 0);
+	linspaceItc = new wxTextCtrl(panel, ItcID, "I", wxPoint(225, 70), wxSize(50, 40), 0L, validator);
+	linspaceItc->SetFont(font);
 
 	lambdaText = new wxStaticText(panel, wxID_ANY, "Enter LAMBDA:", wxPoint(500, 20), wxSize(100, 100));
 	lambdaText->SetBackgroundColour(*wxLIGHT_GREY);
 
-	LAMBDAsp = new wxSpinCtrl(panel, LAMBDAspinID, "", wxPoint(515, 70), wxSize(50, 20), 16384L, 0, 999, 0);
+	LAMBDAtc = new wxTextCtrl(panel, LAMBDAtcID, "Lambda", wxPoint(510, 75), wxSize(75, 30), 0L, validator);
 
 	aText = new wxStaticText(panel, wxID_ANY, "Enter a:", wxPoint(685, 20), wxSize(100, 100));
 	aText->SetBackgroundColour(*wxLIGHT_GREY);
 
-	Asp = new wxSpinCtrl(panel, AspinID, "", wxPoint(700, 70), wxSize(50, 20), 16384L, 0, 999, 0);
+	Atc = new wxTextCtrl(panel, AtcID, "a", wxPoint(700, 70), wxSize(50, 40), 0L, validator);
+	Atc->SetFont(font);
 
 	vibPerText = new wxStaticText(panel, wxID_ANY, "Enter the vibration period:", wxPoint(600, 140), wxSize(100, 100));
 	vibPerText->SetBackgroundColour(*wxLIGHT_GREY);
 
-	wxTextValidator validator(wxFILTER_NUMERIC);
-	vibPerTC = new wxTextCtrl(panel, VIBPERtcID, "", wxPoint(615, 210), wxSize(50, 20), 0L, validator);
+	vibPerTC = new wxTextCtrl(panel, VIBPERtcID, "Period", wxPoint(610, 200), wxSize(75, 30), 0L, validator);
 
 	submitButton = new wxButton(panel, wxID_ANY, "SUBMIT", wxPoint(60, 170), wxSize(300, 50));
 
@@ -68,15 +69,15 @@ void MainFrame::CreateControls() {
 
 
 void MainFrame::BindControls() {
-	linspaceLRsp->Bind(wxEVT_SPINCTRL, &MainFrame::OnSpin, this);
+	linspaceLRtc->Bind(wxEVT_TEXT, &MainFrame::OnType, this);
 
-	linspaceURsp->Bind(wxEVT_SPINCTRL, &MainFrame::OnSpin, this);
+	linspaceURtc->Bind(wxEVT_TEXT, &MainFrame::OnType, this);
 
-	linspaceIsp->Bind(wxEVT_SPINCTRL, &MainFrame::OnSpin, this);
+	linspaceItc->Bind(wxEVT_TEXT, &MainFrame::OnType, this);
 
-	Asp->Bind(wxEVT_SPINCTRL, &MainFrame::OnSpin, this);
+	Atc->Bind(wxEVT_TEXT, &MainFrame::OnType, this);
 
-	LAMBDAsp->Bind(wxEVT_SPINCTRL, &MainFrame::OnSpin, this);
+	LAMBDAtc->Bind(wxEVT_TEXT, &MainFrame::OnType, this);
 
 	vibPerTC->Bind(wxEVT_TEXT, &MainFrame::OnType, this);
 
@@ -94,40 +95,6 @@ void MainFrame::OnSubmitClick(wxCommandEvent& evt) {
 	PrintYValues();
 }
 
-void MainFrame::OnSpin(wxSpinEvent& evt) {
-	int id = evt.GetId();
-	if (id == URspinID) {
-		wxSpinCtrl* spinCtrl = wxDynamicCast(evt.GetEventObject(), wxSpinCtrl);
-		if (spinCtrl) {
-			stringlen = spinCtrl->GetValue();
-			}
-	}
-	if (id == LRspinID) {
-		wxSpinCtrl* spinCtrl = wxDynamicCast(evt.GetEventObject(), wxSpinCtrl);
-		if (spinCtrl) {
-			lowRange = spinCtrl->GetValue();
-		}
-	}
-	if (id == IspinID) {
-		wxSpinCtrl* spinCtrl = wxDynamicCast(evt.GetEventObject(), wxSpinCtrl);
-		if (spinCtrl) {
-			h = spinCtrl->GetValue();
-		}
-	}
-	if (id == AspinID) {
-		wxSpinCtrl* spinCtrl = wxDynamicCast(evt.GetEventObject(), wxSpinCtrl);
-		if (spinCtrl) {
-			a = spinCtrl->GetValue();
-		}
-	}
-	if (id == LAMBDAspinID) {
-		wxSpinCtrl* spinCtrl = wxDynamicCast(evt.GetEventObject(), wxSpinCtrl);
-		if (spinCtrl) {
-			lambda = spinCtrl->GetValue();
-		}
-	}
-}
-
 void MainFrame::OnType(wxCommandEvent& evt) {
 	int id = evt.GetId();
 	if (id == VIBPERtcID) {
@@ -138,6 +105,61 @@ void MainFrame::OnType(wxCommandEvent& evt) {
 			bool result = text.ToDouble(&value);
 			if (result) {
 				vibPeriod = value;
+			}
+		}
+	}
+	if (id == LRtcID) {
+		wxTextCtrl* textCtrl = wxDynamicCast(evt.GetEventObject(), wxTextCtrl);
+		if (textCtrl) {
+			int value;
+			wxString text = textCtrl->GetValue();
+			bool result = text.ToInt(&value);
+			if (result) {
+				lowRange = value;
+			}
+		}
+	}
+	if (id == URtcID) {
+		wxTextCtrl* textCtrl = wxDynamicCast(evt.GetEventObject(), wxTextCtrl);
+		if (textCtrl) {
+			int value;
+			wxString text = textCtrl->GetValue();
+			bool result = text.ToInt(&value);
+			if (result) {
+				stringlen = value;
+			}
+		}
+	}
+	if (id == ItcID) {
+		wxTextCtrl* textCtrl = wxDynamicCast(evt.GetEventObject(), wxTextCtrl);
+		if (textCtrl) {
+			int value;
+			wxString text = textCtrl->GetValue();
+			bool result = text.ToInt(&value);
+			if (result) {
+				h = value;
+			}
+		}
+	}
+	if (id == AtcID) {
+		wxTextCtrl* textCtrl = wxDynamicCast(evt.GetEventObject(), wxTextCtrl);
+		if (textCtrl) {
+			double value;
+			wxString text = textCtrl->GetValue();
+			bool result = text.ToDouble(&value);
+			if (result) {
+				a = value;
+			}
+		}
+	}
+	if (id == LAMBDAtcID) {
+		wxTextCtrl* textCtrl = wxDynamicCast(evt.GetEventObject(), wxTextCtrl);
+		if (textCtrl) {
+			double value;
+			wxString text = textCtrl->GetValue();
+			bool result = text.ToDouble(&value);
+			if (result) {
+				lambda = value;
 			}
 		}
 	}
@@ -205,14 +227,14 @@ void MainFrame::Clear(wxCommandEvent& evt) {
 		outputActivated = 0;
 	}
 
-	linspaceLRsp->SetValue(0);
-	linspaceURsp->SetValue(0);
-	linspaceIsp->SetValue(0);
-	LAMBDAsp->SetValue(0);
-	Asp->SetValue(0);
-	vibPerTC->SetValue("");
+	linspaceLRtc->SetValue("LR");
+	linspaceURtc->SetValue("UR");
+	linspaceItc->SetValue("I");
+	LAMBDAtc->SetValue("Lambda");
+	Atc->SetValue("a");
+	vibPerTC->SetValue("Period");
 
-	linspaceLRsp->SetFocus();
+	linspaceLRtc->SetFocus();
 
 	wxLogStatus("CLEARED");
 }
